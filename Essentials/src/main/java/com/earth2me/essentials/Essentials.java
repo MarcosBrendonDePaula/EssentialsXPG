@@ -18,6 +18,7 @@
 package com.earth2me.essentials;
 
 import com.earth2me.essentials.commands.EssentialsCommand;
+import com.earth2me.essentials.config.EssentialsConfiguration;
 import com.earth2me.essentials.commands.IEssentialsCommand;
 import com.earth2me.essentials.commands.NoChargeException;
 import com.earth2me.essentials.commands.NotEnoughArgumentsException;
@@ -40,6 +41,7 @@ import com.earth2me.essentials.textreader.KeywordReplacer;
 import com.earth2me.essentials.textreader.SimpleTextInput;
 import com.earth2me.essentials.updatecheck.UpdateChecker;
 import com.earth2me.essentials.userstorage.ModernUserMap;
+import com.earth2me.essentials.userstorage.PostgreSQLUserMap;
 import com.earth2me.essentials.utils.AdventureUtil;
 import com.earth2me.essentials.utils.FormatUtil;
 import com.earth2me.essentials.utils.VersionUtil;
@@ -312,7 +314,17 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             mail = new MailServiceImpl(this);
             execTimer.mark("Init(Mail)");
 
-            userMap = new ModernUserMap(this);
+            // Check if PostgreSQL database is configured
+            final EssentialsConfiguration config = new EssentialsConfiguration(new File(getDataFolder(), "config.yml"));
+            config.load();
+            final boolean usePostgres = config.getBoolean("database.use-postgres", false);
+            if (usePostgres) {
+                userMap = new PostgreSQLUserMap(this);
+                getLogger().info("Using PostgreSQL database for user storage");
+            } else {
+                userMap = new ModernUserMap(this);
+                getLogger().info("Using file-based storage for user data");
+            }
             legacyUserMap = new UserMap(userMap);
             execTimer.mark("Init(Usermap)");
 
